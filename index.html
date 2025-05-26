@@ -127,7 +127,7 @@
   let uploadedImageBase64 = null;
   let uploadedImageMimeType = null;
 
-  // System prompt with updated reference
+  // System prompt
   const systemPrompt = `You are Kaustav, a large language model created by Kaustav Ray, powered by GPT-4.5. Current date: May 26, 2025. Image input capabilities: Enabled. Personality: v2. You are a highly capable, thoughtful, and precise assistant. Your goal is to deeply understand the user's intent, ask clarifying questions when needed, think step-by-step through complex problems, provide clear and accurate answers, and proactively anticipate helpful follow-up information. Always prioritize being truthful, nuanced, insightful, and efficient, tailoring your responses specifically to the user's needs and preferences.
 
 Image safety policies:
@@ -143,6 +143,46 @@ Adhere to this in all languages.`;
 
   // Initialize Highlight.js for code formatting
   hljs.highlightAll();
+
+  // Load chat history from localStorage
+  function loadChatHistory() {
+    const history = JSON.parse(localStorage.getItem('chatHistory') || '[]');
+    history.forEach(message => {
+      addMessage(message.text, message.role === 'user', message.image);
+    });
+  }
+
+  // Save message to localStorage (limit to 10 messages)
+  function saveMessage(role, text, image = null) {
+    const history = JSON.parse(localStorage.getItem('chatHistory') || '[]');
+    history.push({ role, text, image });
+    if (history.length > 10) {
+      history.shift(); // Remove oldest message if over 10
+    }
+    localStorage.setItem('chatHistory', JSON.stringify(history));
+  }
+
+  // Get chat history for API payload
+  function getChatHistoryForAPI() {
+    const history = JSON.parse(localStorage.getItem('chatHistory') || '[]');
+    const apiHistory = [];
+    history.forEach(message => {
+      const parts = [{ text: message.text }];
+      if (message.image) {
+        parts.push({
+          inline_data: {
+            mime_type: message.mimeType || 'image/jpeg',
+            data: message.image.split(',')[1]
+          }
+        });
+      }
+      apiHistory.push({
+        role: message.role === 'user' ? 'user' : 'model',
+        parts
+      });
+    });
+    return apiHistory;
+  }
 
   // Function to add a message to the chat
   function addMessage(content, isUser = false, image = null) {
@@ -179,23 +219,27 @@ Adhere to this in all languages.`;
     const apiKey = 'AIzaSyCRym6I1qGcwSHKBVQSGcO2j_Iy6crePyw';
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
+    // Build payload with system prompt and conversation history
     const payload = {
       contents: [
         {
-          parts: [
-            { text: systemPrompt }, // Include system prompt
-            { text: text } // User input
-          ]
+          role: 'user',
+          parts: [{ text: systemPrompt }]
+        },
+        ...getChatHistoryForAPI(), // Include up to 10 previous messages
+        {
+          role: 'user',
+          parts: [{ text: text }]
         }
       ]
     };
 
-    // Add image to payload if provided
+    // Add image to the last user message if provided
     if (imageBase64) {
-      payload.contents[0].parts.push({
+      payload.contents[payload.contents.length - 1].parts.push({
         inline_data: {
-          mime_type: imageMimeType || 'image/jpeg', // Use dynamic MIME type
-          data: imageBase64.split(',')[1] // Remove "data:image/jpeg;base64," prefix
+          mime_type: imageMimeType || 'image/jpeg',
+          data: imageBase64.split(',')[1]
         }
       });
     }
@@ -218,9 +262,11 @@ Adhere to this in all languages.`;
       // Extract the response text from Gemini API
       const botResponse = data.candidates[0].content.parts[0].text || 'Sorry, I could not process that.';
       addMessage(botResponse, false);
+      saveMessage('bot', botResponse); // Save bot response
     } catch (error) {
       removeTypingIndicator(typingDiv);
       addMessage(`Error: ${error.message}`, false);
+      saveMessage('bot', `Error: ${error.message}`);
     }
   }
 
@@ -231,6 +277,7 @@ Adhere to this in all languages.`;
 
     // Add user message (and image if uploaded)
     addMessage(text, true, uploadedImageBase64);
+    saveMessage('user', text, uploadedImageBase64, uploadedImageMimeType); // Save user message
     await callGeminiAPI(text, uploadedImageBase64, uploadedImageMimeType);
 
     // Clear input and image
@@ -252,12 +299,16 @@ Adhere to this in all languages.`;
       const reader = new FileReader();
       reader.onload = (event) => {
         uploadedImageBase64 = event.target.result;
-        uploadedImageMimeType = file.type; // Store MIME type
+        uploadedImageMimeType = file.type;
         addMessage('Image uploaded successfully. Please add your query and send.', true, uploadedImageBase64);
+        saveMessage('user', 'Image uploaded successfully. Please add your query and send.', uploadedImageBase64, uploadedImageMimeType);
       };
       reader.readAsDataURL(file);
     }
   });
+
+  // Load chat history on page load
+  window.addEventListener('load', loadChatHistory);
 </script>
 </body>
 </html>
