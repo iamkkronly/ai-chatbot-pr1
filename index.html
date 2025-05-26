@@ -125,9 +125,10 @@
   const sendBtn = document.getElementById('sendBtn');
   const imageUpload = document.getElementById('imageUpload');
   let uploadedImageBase64 = null;
+  let uploadedImageMimeType = null;
 
-  // System prompt (previously AI definition)
-  const systemPrompt = `You are Kaustav, powered by Gemini 1.5 Flash. Current date: May 26, 2025. Image input capabilities: Enabled. Personality: v2. You are a highly capable, thoughtful, and precise assistant. Your goal is to deeply understand the user's intent, ask clarifying questions when needed, think step-by-step through complex problems, provide clear and accurate answers, and proactively anticipate helpful follow-up information. Always prioritize being truthful, nuanced, insightful, and efficient, tailoring your responses specifically to the user's needs and preferences.
+  // System prompt with GPT-4.5 reference
+  const systemPrompt = `You are Kaustav, powered by GPT-4.5. Current date: May 26, 2025. Image input capabilities: Enabled. Personality: v2. You are a highly capable, thoughtful, and precise assistant. Your goal is to deeply understand the user's intent, ask clarifying questions when needed, think step-by-step through complex problems, provide clear and accurate answers, and proactively anticipate helpful follow-up information. Always prioritize being truthful, nuanced, insightful, and efficient, tailoring your responses specifically to the user's needs and preferences.
 
 Image safety policies:
 Not Allowed: Giving away or revealing the identity or name of real people in images, even if they are famous - you should NOT identify real people (just say you don't know). Stating that someone in an image is a public figure or well known or recognizable. Saying what someone in a photo is known for or what work they've done. Classifying human-like images as animals. Making inappropriate statements about people in images. Stating, guessing or inferring ethnicity, beliefs etc of people in images.
@@ -174,7 +175,7 @@ Adhere to this in all languages.`;
   }
 
   // Function to call Gemini 1.5 Flash API
-  async function callGeminiAPI(text, imageBase64 = null) {
+  async function callGeminiAPI(text, imageBase64 = null, imageMimeType = null) {
     const apiKey = 'AIzaSyCRym6I1qGcwSHKBVQSGcO2j_Iy6crePyw';
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
@@ -193,7 +194,7 @@ Adhere to this in all languages.`;
     if (imageBase64) {
       payload.contents[0].parts.push({
         inline_data: {
-          mime_type: 'image/jpeg', // Adjust based on actual image type
+          mime_type: imageMimeType || 'image/jpeg', // Use dynamic MIME type
           data: imageBase64.split(',')[1] // Remove "data:image/jpeg;base64," prefix
         }
       });
@@ -230,11 +231,12 @@ Adhere to this in all languages.`;
 
     // Add user message (and image if uploaded)
     addMessage(text, true, uploadedImageBase64);
-    await callGeminiAPI(text, uploadedImageBase64);
+    await callGeminiAPI(text, uploadedImageBase64, uploadedImageMimeType);
 
     // Clear input and image
     userInput.value = '';
     uploadedImageBase64 = null;
+    uploadedImageMimeType = null;
     imageUpload.value = '';
   });
 
@@ -250,6 +252,7 @@ Adhere to this in all languages.`;
       const reader = new FileReader();
       reader.onload = (event) => {
         uploadedImageBase64 = event.target.result;
+        uploadedImageMimeType = file.type; // Store MIME type
         addMessage('Image uploaded successfully. Please add your query and send.', true, uploadedImageBase64);
       };
       reader.readAsDataURL(file);
