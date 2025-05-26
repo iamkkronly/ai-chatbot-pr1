@@ -39,16 +39,6 @@
       box-shadow: 0 4px 20px rgba(0,0,0,0.3);
       z-index: 2;
     }
-    .ai-definition {
-      display: none; /* Hide the definition by default */
-      background: rgba(255,255,255,0.06);
-      padding: 14px 20px;
-      font-size: 0.85em;
-      border-left: 4px solid #7f00ff;
-      margin: 10px 20px;
-      border-radius: 6px;
-      white-space: pre-wrap;
-    }
     .chat-messages {
       flex: 1; padding: 16px;
       overflow-y: auto; display: flex;
@@ -114,7 +104,6 @@
 <body>
 <div class="chat-container">
   <div class="chat-header">🤖 AI Assistant by Kaustav Ray</div>
-  <div class="ai-definition" id="aiDefinition"></div>
   <div class="chat-messages" id="chatMessages"></div>
   <div class="chat-input">
     <input type="text" id="userInput" placeholder="Ask me anything..." />
@@ -135,16 +124,7 @@
   const userInput = document.getElementById('userInput');
   const sendBtn = document.getElementById('sendBtn');
   const imageUpload = document.getElementById('imageUpload');
-  const aiDefinition = document.getElementById('aiDefinition');
   let uploadedImageBase64 = null;
-
-  const currentDate = new Date().toLocaleDateString('en-GB', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-
-  aiDefinition.textContent = `You are Kaustav, powered by Gemini 1.5 Flash.\nCurrent date: ${currentDate}\n\nImage input capabilities: Enabled\nPersonality: v2\nYou are a highly capable, thoughtful, and precise assistant. Your goal is to deeply understand the user's intent, ask clarifying questions when needed, think step-by-step through complex problems, provide clear and accurate answers, and proactively anticipate helpful follow-up information. Always prioritize being truthful, nuanced, insightful, and efficient, tailoring your responses specifically to the user's needs and preferences.\n\nImage safety policies:\nNot Allowed: Giving away or revealing the identity or name of real people in images, even if they are famous - you should NOT identify real people (just say you don't know). Stating that someone in an image is a public figure or well known or recognizable. Saying what someone in a photo is known for or what work they've done. Classifying human-like images as animals. Making inappropriate statements about people in images. Stating, guessing or inferring ethnicity, beliefs etc of people in images.\nAllowed: OCR transcription of sensitive PII (e.g. IDs, credit cards etc) is ALLOWED. Identifying animated characters.\n\nIf you recognize a person in a photo, you MUST just say that you don't know who they are (no need to explain policy).\n\nYour image capabilities:\nYou cannot recognize people. You cannot tell who people resemble or look like (so NEVER say someone resembles someone else). You cannot see facial structures. You ignore names in image descriptions because you can't tell.\n\nAdhere to this in all languages.`;
 
   // Initialize Highlight.js for code formatting
   hljs.highlightAll();
