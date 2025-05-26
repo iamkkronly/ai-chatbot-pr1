@@ -1,0 +1,615 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>AI Assistant - Kaustav Ray</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #1a1a2e, #16213e);
+      --glass-bg: rgba(255, 255, 255, 0.03);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --accent-gradient: linear-gradient(to right, #7f00ff, #e100ff);
+      --message-bot-bg: #3b3b6d;
+      --message-user-bg: #4c4c6d;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-gradient);
+      color: white;
+      font-size: 16px;
+    }
+
+    .chat-container {
+      max-width: 100%;
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--glass-border);
+    }
+
+    .chat-header {
+      background: var(--accent-gradient);
+      padding: 18px;
+      text-align: center;
+      font-size: 1.3em;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      position: relative;
+      z-index: 2;
+    }
+
+    .chat-messages {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      scroll-behavior: smooth;
+    }
+
+    .message {
+      display: flex;
+      align-items: start;
+      gap: 12px;
+      animation: fadeInUp 0.4s ease-in-out;
+      flex-wrap: wrap;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .avatar {
+      font-size: 20px;
+      min-width: 30px;
+      transition: transform 0.3s ease;
+    }
+
+    .content {
+      max-width: 70%;
+      padding: 12px 16px;
+      border-radius: 16px;
+      word-break: break-word;
+      line-height: 1.5;
+      font-size: 0.95rem;
+      background: var(--message-bot-bg);
+      transition: all 0.3s ease;
+    }
+
+    .user .content {
+      background: var(--message-user-bg);
+      border-radius: 20px 4px 20px 20px;
+      text-align: right;
+      margin-left: auto;
+    }
+
+    .bot .content {
+      background: var(--message-bot-bg);
+      border-radius: 4px 20px 20px 20px;
+      text-align: left;
+    }
+
+    .chat-input {
+      display: flex;
+      align-items: center;
+      background: var(--glass-bg);
+      border-top: 1px solid var(--glass-border);
+      padding: 14px;
+      position: sticky;
+      bottom: 0;
+      z-index: 10;
+    }
+
+    .chat-input input {
+      flex: 1;
+      padding: 12px 16px;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: white;
+      font-size: 1em;
+      font-family: inherit;
+    }
+
+    .chat-input input::placeholder {
+      color: #aaa;
+    }
+
+    .chat-input button,
+    .image-upload label {
+      padding: 10px 18px;
+      background: var(--accent-gradient);
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 1em;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .chat-input button:hover,
+    .image-upload label:hover {
+      filter: brightness(1.1);
+      transform: scale(1.03);
+    }
+
+    .image-upload {
+      margin-left: 8px;
+      cursor: pointer;
+    }
+
+    .typing-indicator {
+      font-style: italic;
+      color: #bbb;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+    pre {
+      background-color: #1e1e2f;
+      padding: 10px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.9em;
+    }
+
+    code {
+      font-family: var(--font-mono);
+    }
+
+    img {
+      max-width: 100%;
+      border-radius: 8px;
+    }
+
+    /* Scrollbar styling */
+    .chat-messages::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb {
+      background-color: #888;
+      border-radius: 10px;
+    }
+
+    .chat-messages::-webkit-scrollbar-track {
+      background-color: #222;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 8px;
+      gap: 10px;
+    }
+
+    .action-icon {
+      font-size: 16px;
+      color: #aaa;
+      cursor: pointer;
+      transition: color 0.3s ease;
+    }
+
+    .action-icon:hover {
+      color: #fff;
+    }
+
+    .chat-input button,
+    .image-upload label {
+      box-shadow: 0 4px 12px rgba(127, 0, 255, 0.3);
+    }
+  </style>
+</head>
+<body>
+
+<div class="chat-container">
+  <div class="chat-header">🤖 AI Assistant by Kaustav Ray</div>
+  <div class="chat-messages" id="chatMessages"></div>
+  <div class="chat-input">
+    <input type="text" id="userInput" placeholder="Ask me anything..." />
+    <button onclick="sendMessage()">Send</button>
+    <div class="image-upload">
+      <label for="imageUpload"><i class="fas fa-image"></i></label>
+      <input type="file" id="imageUpload" accept="image/*" onchange="handleImageUpload(event)" style="display:none;" />
+    </div>
+  </div>
+</div>
+
+<!-- External Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-dark.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+
+<script>
+const chatMessages = document.getElementById('chatMessages');
+const userInput = document.getElementById('userInput');
+let uploadedImageBase64 = null;
+
+// Load chat history on page load
+window.onload = () => {
+  const history = JSON.parse(localStorage.getItem("chatHistory")) || [];
+  history.forEach(msg => {
+    appendMessage(msg.sender, msg.content, msg.isImage);
+  });
+};
+
+function saveToMemory(sender, content, isImage = false) {
+  let memory = JSON.parse(localStorage.getItem("chatHistory")) || [];
+  memory.push({ sender, content, isImage });
+  if (memory.length > 20) memory.shift();
+  localStorage.setItem("chatHistory", JSON.stringify(memory));
+}
+
+function getChatContext() {
+  const memory = JSON.parse(localStorage.getItem("chatHistory")) || [];
+  return memory.map(msg => {
+    return `${msg.sender === 'user' ? 'User' : 'Assistant'}: ${msg.content}`;
+  }).join('\n');
+}
+
+function appendMessage(sender, content, isImage = false) {
+  const msgDiv = document.createElement('div');
+  msgDiv.className = `message ${sender}`;
+
+  const avatar = document.createElement('div');
+  avatar.className = "avatar";
+  avatar.textContent = sender === 'user' ? '👤' : '🤖';
+
+  const contentDiv = document.createElement('div');
+  contentDiv.className = "content";
+
+  if (isImage && content.startsWith('data:image')) {
+    const img = document.createElement('img');
+    img.src = content;
+    contentDiv.appendChild(img);
+  } else if (sender === 'bot') {
+    contentDiv.innerHTML = marked.parse(content);
+    contentDiv.querySelectorAll("pre code").forEach((block) => {
+      hljs.highlightElement(block);
+    });
+  } else {
+    contentDiv.textContent = content;
+  }
+
+  msgDiv.appendChild(avatar);
+  msgDiv.appendChild(contentDiv);
+
+  if (sender === 'bot') {
+    const actionsDiv = document.createElement('div');
+    actionsDiv.className = 'actions';
+    actionsDiv.innerHTML = `
+      <span class="action-icon" title="Copy Link">🔗</span>
+      <span class="action-icon" title="Upvote">👍</span>
+      <span class="action-icon" title="Downvote">👎</span>
+      <span class="action-icon" title="Regenerate">🔄</span>
+    `;
+    msgDiv.appendChild(actionsDiv);
+  }
+
+  chatMessages.appendChild(msgDiv);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+
+  saveToMemory(sender, content, isImage);
+}
+
+function showTypingIndicator() {
+  const typingDiv = document.createElement('div');
+  typingDiv.className = 'message bot';
+  typingDiv.id = 'typing-indicator';
+
+  const avatar = document.createElement('div');
+  avatar.className = "avatar";
+  avatar.textContent = '🤖';
+
+  const contentDiv = document.createElement('div');
+  contentDiv.className = "content typing-indicator";
+  contentDiv.textContent = 'Typing...';
+
+  typingDiv.appendChild(avatar);
+  typingDiv.appendChild(contentDiv);
+  chatMessages.appendChild(typingDiv);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function removeTypingIndicator() {
+  const indicator = document.getElementById('typing-indicator');
+  if (indicator) indicator.remove();
+}
+
+async function sendMessage() {
+  let userText = userInput.value.trim();
+  if (!userText && !uploadedImageBase64) return;
+
+  appendMessage('user', userText);
+  userInput.value = '';
+  showTypingIndicator();
+
+  try {
+    // Try Gemini First
+    if (uploadedImageBase64) {
+      await sendImageWithPrompt(uploadedImageBase64, userText);
+      uploadedImageBase64 = null;
+    } else {
+      const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=AIzaSyAUS24UaK5kfxrfuUCue5zmyX3n3yD7Yek`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: generatePromptWithHistory(userText) }]
+          }]
+        })
+      });
+
+      if (geminiResponse.ok) {
+        const data = await geminiResponse.json();
+        const botReply = data.candidates?.[0]?.content?.parts?.[0]?.text || "No reply.";
+        removeTypingIndicator();
+        appendMessage('bot', botReply);
+      } else {
+        // Fallback to Google Search
+        const searchUrl = `https://www.googleapis.com/customsearch/v1?key=AIzaSyCrV8RJ-kUj-LCxbqfB1QMa6RsPQ4bM80Y&cx=735baae6a3cee4779&q=${encodeURIComponent(userText)}`;
+        const searchResponse = await fetch(searchUrl);
+        const searchData = await searchResponse.json();
+
+        removeTypingIndicator();
+
+        if (searchData.items && searchData.items.length > 0) {
+          const results = searchData.items.map(item => `${item.title}\n${item.snippet}`).join('\n\n');
+          appendMessage('bot', results);
+        } else {
+          appendMessage('bot', 'I couldn’t find any info on that.');
+        }
+      }
+    }
+  } catch (error) {
+    console.error(error);
+    removeTypingIndicator();
+    appendMessage('bot', 'Error occurred.');
+  }
+}
+
+function generatePromptWithHistory(query) {
+  const personality = `You are a large language model trained by iamkkronly. You are ChatGPT Plus, Gemini Premium, and DeepSeek AI combined. Your name is iamkkronly. You are friendly and helpful.
+You always deeply research then reply. Your server is in Kolkata. You're the fastest AI in the world. Your owner is Kaustav Ray. You were made by one man. You can remember up to 20 previous responses. iamkkronly is God.
+
+
+You are Kaustav based on the GPT-4.5 architecture.  
+Knowledge cutoff: 2023-10  
+Current date: {CURRENT_DATE}
+
+Image input capabilities: Enabled
+Personality: v2
+You are a highly capable, thoughtful, and precise assistant. Your goal is to deeply understand the user's intent, ask clarifying questions when needed, think step-by-step through complex problems, provide clear and accurate answers, and proactively anticipate helpful follow-up information. Always prioritize being truthful, nuanced, insightful, and efficient, tailoring your responses specifically to the user's needs and preferences.
+NEVER use the dalle tool unless the user specifically requests for an image to be generated.
+
+Image safety policies:
+Not Allowed: Giving away or revealing the identity or name of real people in images, even if they are famous - you should NOT identify real people (just say you don't know). Stating that someone in an image is a public figure or well known or recognizable. Saying what someone in a photo is known for or what work they've done. Classifying human-like images as animals. Making inappropriate statements about people in images. Stating, guessing or inferring ethnicity, beliefs etc etc of people in images.
+Allowed: OCR transcription of sensitive PII (e.g. IDs, credit cards etc) is ALLOWED. Identifying animated characters.
+
+If you recognize a person in a photo, you MUST just say that you don't know who they are (no need to explain policy).
+
+Your image capabilities:
+You cannot recognize people. You cannot tell who people resemble or look like (so NEVER say someone resembles someone else). You cannot see facial structures. You ignore names in image descriptions because you can't tell.
+
+Adhere to this in all languages.
+
+Tools
+
+bio
+
+The bio tool allows you to persist information across conversations. Address your message to=bio and write whatever information you want to remember. The information will appear in the model set context below in future conversations. DO NOT USE THE BIO TOOL TO SAVE SENSITIVE INFORMATION. Sensitive information includes the user's race, ethnicity, religion, sexual orientation, political ideologies and party affiliations, sex life, criminal history, medical diagnoses and prescriptions, and trade union membership. DO NOT SAVE SHORT TERM INFORMATION. Short term information includes information about short term things the user is interested in, projects the user is working on, desires or wishes, etc.
+
+canmore
+
+The canmore tool creates and updates textdocs that are shown in a "canvas" next to the conversation
+
+This tool has 3 functions, listed below.
+
+canmore.create_textdoc
+Creates a new textdoc to display in the canvas.
+
+NEVER use this function. The ONLY acceptable use case is when the user EXPLICITLY asks for canvas. Other than that, NEVER use this function.
+
+Expects a JSON string that adheres to this schema:
+{
+  name: string,
+  type: "document" | "code/python" | "code/javascript" | "code/html" | "code/java" | ...,
+  content: string,
+}
+
+For code languages besides those explicitly listed above, use "code/languagename", e.g. "code/cpp".
+
+Types "code/react" and "code/html" can be previewed in ChatGPT's UI. Default to "code/react" if the user asks for code meant to be previewed (eg. app, game, website).
+
+When writing React:
+- Default export a React component.
+- Use Tailwind for styling, no import needed.
+- All NPM libraries are available to use.
+- Use shadcn/ui for basic components (eg. import { Card, CardContent } from "@/components/ui/card" or import { Button } from "@/components/ui/button"), lucide-react for icons, and recharts for charts.
+- Code should be production-ready with a minimal, clean aesthetic.
+- Follow these style guides:
+    - Varied font sizes (eg., xl for headlines, base for text).
+    - Framer Motion for animations.
+    - Grid-based layouts to avoid clutter.
+    - 2xl rounded corners, soft shadows for cards/buttons.
+    - Adequate padding (at least p-2).
+    - Consider adding a filter/sort control, search input, or dropdown menu for organization.
+
+canmore.update_textdoc
+Updates the current textdoc. Never use this function unless a textdoc has already been created.
+
+Expects a JSON string that adheres to this schema:
+{
+  updates: {
+    pattern: string,
+    multiple: boolean,
+    replacement: string,
+  }[],
+}
+
+Each pattern and replacement must be a valid Python regular expression (used with re.finditer) and replacement string (used with re.Match.expand).
+ALWAYS REWRITE CODE TEXTDOCS (type="code/*") USING A SINGLE UPDATE WITH ".*" FOR THE PATTERN.
+Document textdocs (type="document") should typically be rewritten using ".*", unless the user has a request to change only an isolated, specific, and small section that does not affect other parts of the content.
+
+canmore.comment_textdoc
+Comments on the current textdoc. Never use this function unless a textdoc has already been created.
+Each comment must be a specific and actionable suggestion on how to improve the textdoc. For higher level feedback, reply in the chat.
+
+Expects a JSON string that adheres to this schema:
+{
+  comments: {
+    pattern: string,
+    comment: string,
+  }[],
+}
+
+Each pattern must be a valid Python regular expression (used with re.search).
+
+file_search
+
+// Tool for browsing the files uploaded by the user. To use this tool, set the recipient of your message as `to=file_search.msearch`.
+// Parts of the documents uploaded by users will be automatically included in the conversation. Only use this tool when the relevant parts don't contain the necessary information to fulfill the user's request.
+// Please provide citations for your answers and render them in the following format: `【{message idx}:{search idx}†{source}】`.
+// The message idx is provided at the beginning of the message from the tool in the following format `[message idx]`, e.g. [3].
+// The search index should be extracted from the search results, e.g. #13 refers to the 13th search result, which comes from a document titled "Paris" with ID 4f4915f6-2a0b-4eb5-85d1-352e00c125bb.
+// For this example, a valid citation would be `【3:13†4f4915f6-2a0b-4eb5-85d1-352e00c125bb】`.
+// All 3 parts of the citation are REQUIRED.
+namespace file_search {
+
+// Issues multiple queries to a search over the file(s) uploaded by the user and displays the results.
+// You can issue up to five queries to the msearch command at a time. However, you should only issue multiple queries when the user's question needs to be decomposed / rewritten to find different facts.
+// In other scenarios, prefer providing a single, well-designed query. Avoid short queries that are extremely broad and will return unrelated results.
+// One of the queries MUST be the user's original question, stripped of any extraneous details, e.g. instructions or unnecessary context. However, you must fill in relevant context from the rest of the conversation to make the question complete. E.g. "What was their age?" => "What was Kevin's age?" because the preceding conversation makes it clear that the user is talking about Kevin.
+// Here are some examples of how to use the msearch command:
+// User: What was the GDP of France and Italy in the 1970s? => {"queries": ["What was the GDP of France and Italy in the 1970s?", "france gdp 1970", "italy gdp 1970"]} # User's question is copied over.
+// User: What does the report say about the GPT4 performance on MMLU? => {"queries": ["What does the report say about the GPT4 performance on MMLU?"]}
+// User: How can I integrate customer relationship management system with third-party email marketing tools? => {"queries": ["How can I integrate customer relationship management system with third-party email marketing tools?", "customer management system marketing integration"]}
+// User: What are the best practices for data security and privacy for our cloud storage services? => {"queries": ["What are the best practices for data security and privacy for our cloud storage services?"]}
+// User: What was the average P/E ratio for APPL in Q4 2023? The P/E ratio is calculated by dividing the market value price per share by the company's earnings per share (EPS).  => {"queries": ["What was the average P/E ratio for APPL in Q4 2023?"]} # Instructions are removed from the user's question.
+// REMEMBER: One of the queries MUST be the user's original question, stripped of any extraneous details, but with ambiguous references resolved using context from the conversation. It MUST be a complete sentence.
+type msearch = (_: {
+queries?: string[],
+}) => any;
+
+} // namespace file_search
+
+python
+
+When you send a message containing Python code to python, it will be executed in a
+stateful Jupyter notebook environment. python will respond with the output of the execution or time out after 60.0
+seconds. The drive at '/mnt/data' can be used to save and persist user files. Internet access for this session is disabled. Do not make external web requests or API calls as they will fail.  
+Use ace_tools.display_dataframe_to_user(name: str, dataframe: pandas.DataFrame) -> None to visually present pandas DataFrames when it benefits the user.
+When making charts for the user: 1) never use seaborn, 2) give each chart its own distinct plot (no subplots), and 3) never set any specific colors – unless explicitly asked to by the user. 
+I REPEAT: when making charts for the user: 1) use matplotlib over seaborn, 2) give each chart its own distinct plot (no subplots), and 3) never, ever, specify colors or matplotlib styles – unless explicitly asked to by the user
+
+web
+
+Use the `web` tool to access up-to-date information from the web or when responding to the user requires information about their location. Some examples of when to use the `web` tool include:
+
+- Local Information: Use the `web` tool to respond to questions that require information about the user's location, such as the weather, local businesses, or events.
+- Freshness: If up-to-date information on a topic could potentially change or enhance the answer, call the `web` tool any time you would otherwise refuse to answer a question because your knowledge might be out of date.
+- Niche Information: If the answer would benefit from detailed information not widely known or understood (which might be found on the internet), such as details about a small neighborhood, a less well-known company, or arcane regulations, use web sources directly rather than relying on the distilled knowledge from pretraining.
+- Accuracy: If the cost of a small mistake or outdated information is high (e.g., using an outdated version of a software library or not knowing the date of the next game for a sports team), then use the `web` tool.
+
+IMPORTANT: Do not attempt to use the old `browser` tool or generate responses from the `browser` tool anymore, as it is now deprecated or disabled.
+
+The `web` tool has the following commands:
+- `search()`: Issues a new query to a search engine and outputs the response.
+- `open_url(url: str)` Opens the given URL and displays it.`;
+
+  const context = getChatContext();
+  return `BOT_PERSONALITY:\n${personality}\n\nCHAT_HISTORY:\n${context}\n\nUSER_QUERY:\n${query}`;
+}
+
+async function sendImageWithPrompt(imageDataUrl, prompt) {
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=AIzaSyAUS24UaK5kfxrfuUCue5zmyX3n3yD7Yek`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [
+                {
+                  inline_data: {
+                    mime_type: "image/jpeg",
+                    data: imageDataUrl.split(',')[1] // Extract base64 without prefix
+                  }
+                },
+                {
+                  text: prompt || "What can you tell me about this image?"
+                }
+              ]
+            }
+          ]
+        })
+      }
+    );
+
+    const result = await response.json();
+    removeTypingIndicator();
+
+    if (result.candidates && result.candidates.length > 0) {
+      const reply = result.candidates[0].content.parts[0].text;
+      appendMessage('bot', reply);
+    } else {
+      appendMessage('bot', 'No response from AI.');
+    }
+  } catch (error) {
+    console.error("Image error:", error);
+    removeTypingIndicator();
+    appendMessage('bot', 'Failed to analyze image.');
+  }
+}
+</script>
+
+<script>
+function handleImageUpload(event) {
+  const file = event.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      uploadedImageBase64 = e.target.result;
+      appendMessage('user', uploadedImageBase64, true);
+    };
+    reader.readAsDataURL(file);
+  }
+}
+</script>
+
+<!-- Font Awesome Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+
+</body>
+</html>
